@@ -66,6 +66,15 @@ android {
     }
 
     signingConfigs {
+        // checked in so every build (CI or local) signs debug builds with the
+        // same key, letting a new debug APK install as an update over the
+        // last one instead of conflicting on signature mismatch
+        debug {
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
         release {
             keyAlias keystoreProperties['keyAlias']
             keyPassword keystoreProperties['keyPassword']
