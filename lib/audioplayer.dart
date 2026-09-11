@@ -47,7 +47,10 @@ class NAudioPlayer {
       lastSystemVolume = await VolumeController().getVolume();
       volumeHijackable = false;
     }
-    double volume = (Settings.getValue<double>('volume') ?? 1.0) / 10.0;
+    double fraction = (Settings.getValue<double>('volume') ?? 6.0) / 10.0;
+    // square the fraction so low slider values map to a quieter, more
+    // usable floor (slider 1 used to be a flat 10% system volume, too loud)
+    double volume = fraction * fraction;
     VolumeController().setVolume(volume);
   }
 

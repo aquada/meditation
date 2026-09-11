@@ -142,6 +142,15 @@ String formatDuration(Duration d) {
   }
 }
 
+String formatHoursMinutes(Duration d) {
+  final hours = d.inHours;
+  final minutes = d.inMinutes.remainder(60);
+  if (hours > 0) {
+    return '${hours}h ${minutes}m';
+  }
+  return '${minutes}m';
+}
+
 Future<void> requestBatteryOptimization(context) async {
   // checking and asking permissions for flutter_background
   if (await FlutterBackground.hasPermissions) {

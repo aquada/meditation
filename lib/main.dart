@@ -12,6 +12,7 @@ import 'package:event_bus/event_bus.dart';
 import 'package:app_settings/app_settings.dart';
 
 import 'package:meditation/audioplayer.dart';
+import 'package:meditation/history.dart';
 import 'package:meditation/settings.dart';
 import 'package:meditation/timer.dart';
 import 'package:meditation/utils.dart';
@@ -248,6 +249,17 @@ class Home extends StatelessWidget {
       appBar: AppBar(
         title: Text('Meditation Timer'),
         actions: <Widget>[
+          IconButton(
+            icon: const Icon(
+              Icons.history_outlined,
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const HistoryWidget()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(
               Icons.settings_outlined,

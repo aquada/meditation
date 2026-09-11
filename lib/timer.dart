@@ -16,6 +16,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import 'package:meditation/audioplayer.dart';
+import 'package:meditation/db.dart';
+import 'package:meditation/session.dart';
 import 'package:meditation/utils.dart';
 
 enum TimerState { stopped, delaying, meditating }
@@ -318,9 +320,9 @@ class _TimerWidgetState extends State<TimerWidget> with SingleTickerProviderStat
       AwesomeNotifications().cancel(intervalNotificationID);
       // onTimerEnd(playAudio: true);
       if (kReleaseMode) {
-        onTimerEnd(playAudio: false);
+        onTimerEnd(playAudio: false, completed: false);
       } else {
-        onTimerEnd(playAudio: true);
+        onTimerEnd(playAudio: true, completed: false);
       }
     }
   }
@@ -447,7 +449,7 @@ class _TimerWidgetState extends State<TimerWidget> with SingleTickerProviderStat
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Meditation started')));
   }
 
-  void onTimerEnd({bool playAudio = true}) async {
+  void onTimerEnd({bool playAudio = true, bool completed = true}) async {
     // log.i("timer-end", "called");
     // making sure this doesn't get called twice
     // since we do use the backup check on timerUpdate
@@ -456,6 +458,11 @@ class _TimerWidgetState extends State<TimerWidget> with SingleTickerProviderStat
       // if (!meditating) {
       log.e("onTimerEnd called when it shouldn't have");
       return;
+    }
+
+    // only an actual meditation (not a cancelled pre-meditation delay) is worth logging
+    if (timerState == TimerState.meditating) {
+      logSession(completed: completed);
     }
 
     setState(() {
@@ -507,6 +514,29 @@ class _TimerWidgetState extends State<TimerWidget> with SingleTickerProviderStat
       audioPlayer.playSound('end-sound');
     } else {
       audioPlayer.stopPrevious();
+    }
+  }
+
+  Future<void> logSession({required bool completed}) async {
+    var actualDuration = DateTime.now().difference(startTime);
+    var plannedDuration = endTime.difference(startTime);
+    if (actualDuration > plannedDuration) {
+      // clamp: this runs slightly after the natural end when triggered
+      // through the notification callback rather than the ticker
+      actualDuration = plannedDuration;
+    }
+
+    var session = Session(
+      started: startTime,
+      plannedDuration: plannedDuration,
+      actualDuration: actualDuration,
+      completed: completed,
+    );
+
+    try {
+      await DatabaseHelper.instance.insertSession(session);
+    } catch (e) {
+      log.e('failed to log session: $e');
     }
   }
 
