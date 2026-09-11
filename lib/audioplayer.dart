@@ -22,11 +22,8 @@ class NAudioPlayer {
 
   Future<void> play(String audioFile) async {
     stopPrevious();
+    hijackVolume();
     await audioPlayer.setSource(AssetSource(audioFile));
-    // applied after setSource(), not before: audioplayers can reset the
-    // player's volume back to its default when a new source is set, which
-    // would otherwise silently undo the gain we're about to apply
-    await hijackVolume();
     await audioPlayer.resume();
     // restore volume when audio is done playing
     audioPlayer.onPlayerComplete.listen((_) {
@@ -45,26 +42,23 @@ class NAudioPlayer {
     await play(audioFile);
   }
 
-  Future<void> hijackVolume() async {
+  void hijackVolume() async {
     if (volumeHijackable) {
       lastSystemVolume = await VolumeController().getVolume();
       volumeHijackable = false;
     }
-    double fraction = (Settings.getValue<double>('volume') ?? 6.0) / 10.0;
-
-    // Android's system volume is quantized into a handful of discrete steps
-    // (as few as 7-15 depending on device), so a small fraction can round
-    // down to 0 steps - true silence - instead of "quiet". Force the system
-    // volume to full headroom instead, and do the actual, continuous
-    // low-end attenuation via the player's own (unquantized) gain, so
-    // slider 1 is genuinely quiet rather than either too loud or silent.
-    VolumeController().setVolume(1.0);
-    await audioPlayer.setVolume(fraction * fraction);
+    // slider is 0-20 (see settings.dart) specifically so the low end has
+    // finer steps to choose from - the quietest step that's still audible
+    // is device-dependent (Android's system volume is a small number of
+    // discrete steps, varying by device), so this is deliberately just a
+    // plain linear mapping rather than a guessed curve: pick whichever
+    // step actually works on your phone.
+    double volume = (Settings.getValue<double>('volume') ?? 12.0) / 20.0;
+    VolumeController().setVolume(volume);
   }
 
   void restoreVolume() {
     VolumeController().setVolume(lastSystemVolume);
-    audioPlayer.setVolume(1.0);
     volumeHijackable = true;
   }
 }

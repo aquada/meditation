@@ -107,7 +107,7 @@ Future<void> initDefaultSettings() async {
   // do not rely on the settingstile default value. that seems to only be visual
 
   if (Settings.getValue<double>('volume') == null) {
-    await Settings.setValue<double>('volume', 6);
+    await Settings.setValue<double>('volume', 12);
   }
 
   if (Settings.getValue<int>('start-sound') == null) {
