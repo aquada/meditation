@@ -22,8 +22,11 @@ class NAudioPlayer {
 
   Future<void> play(String audioFile) async {
     stopPrevious();
-    await hijackVolume();
     await audioPlayer.setSource(AssetSource(audioFile));
+    // applied after setSource(), not before: audioplayers can reset the
+    // player's volume back to its default when a new source is set, which
+    // would otherwise silently undo the gain we're about to apply
+    await hijackVolume();
     await audioPlayer.resume();
     // restore volume when audio is done playing
     audioPlayer.onPlayerComplete.listen((_) {
