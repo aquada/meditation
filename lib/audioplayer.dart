@@ -22,7 +22,7 @@ class NAudioPlayer {
 
   Future<void> play(String audioFile) async {
     stopPrevious();
-    hijackVolume();
+    await hijackVolume();
     await audioPlayer.setSource(AssetSource(audioFile));
     await audioPlayer.resume();
     // restore volume when audio is done playing
@@ -42,20 +42,26 @@ class NAudioPlayer {
     await play(audioFile);
   }
 
-  void hijackVolume() async {
+  Future<void> hijackVolume() async {
     if (volumeHijackable) {
       lastSystemVolume = await VolumeController().getVolume();
       volumeHijackable = false;
     }
     double fraction = (Settings.getValue<double>('volume') ?? 6.0) / 10.0;
-    // square the fraction so low slider values map to a quieter, more
-    // usable floor (slider 1 used to be a flat 10% system volume, too loud)
-    double volume = fraction * fraction;
-    VolumeController().setVolume(volume);
+
+    // Android's system volume is quantized into a handful of discrete steps
+    // (as few as 7-15 depending on device), so a small fraction can round
+    // down to 0 steps - true silence - instead of "quiet". Force the system
+    // volume to full headroom instead, and do the actual, continuous
+    // low-end attenuation via the player's own (unquantized) gain, so
+    // slider 1 is genuinely quiet rather than either too loud or silent.
+    VolumeController().setVolume(1.0);
+    await audioPlayer.setVolume(fraction * fraction);
   }
 
   void restoreVolume() {
     VolumeController().setVolume(lastSystemVolume);
+    audioPlayer.setVolume(1.0);
     volumeHijackable = true;
   }
 }
