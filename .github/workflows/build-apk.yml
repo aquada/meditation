@@ -1,8 +1,9 @@
-name: Build debug APK
+name: Build APK
 
 on:
   push:
     branches:
+      - main
       - 'feature/**'
   workflow_dispatch: {}
 
@@ -27,9 +28,17 @@ jobs:
 
       - run: flutter pub get
 
+      # the actual daily-use build: small, AOT-compiled, one APK per ABI
+      - run: flutter build apk --release --split-per-abi
+
+      # kept around for whenever something needs debugging (JIT, unminified)
       - run: flutter build apk --debug
 
       - uses: actions/upload-artifact@v4
         with:
-          name: meditation-debug-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          name: meditation-apks
+          path: |
+            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+            build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+            build/app/outputs/flutter-apk/app-x86_64-release.apk
+            build/app/outputs/flutter-apk/app-debug.apk

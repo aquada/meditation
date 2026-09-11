@@ -84,7 +84,12 @@ android {
     }
     buildTypes {
         release {
-            signingConfig signingConfigs.release
+            // this fork is for personal use only (sideloaded, not
+            // distributed via any store), and no release keystore is
+            // configured here (key.properties is a local, gitignored dev
+            // secret) - sign with the checked-in debug key instead. Revert
+            // to signingConfigs.release if this ever needs a real key again.
+            signingConfig signingConfigs.debug
             shrinkResources = false
             ndk {
                 debugSymbolLevel 'FULL'
