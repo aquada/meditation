@@ -47,13 +47,13 @@ class NAudioPlayer {
       lastSystemVolume = await VolumeController().getVolume();
       volumeHijackable = false;
     }
-    // slider is 0-20 (see settings.dart) specifically so the low end has
-    // finer steps to choose from - the quietest step that's still audible
-    // is device-dependent (Android's system volume is a small number of
-    // discrete steps, varying by device), so this is deliberately just a
-    // plain linear mapping rather than a guessed curve: pick whichever
-    // step actually works on your phone.
-    double volume = (Settings.getValue<double>('volume') ?? 12.0) / 20.0;
+    // slider step is 0.5 (see settings.dart) specifically so the low end
+    // has finer steps to choose from - the quietest step that's still
+    // audible is device-dependent (Android's system volume is a small
+    // number of discrete steps, varying by device), so this is
+    // deliberately just a plain linear mapping rather than a guessed
+    // curve: pick whichever step actually works on your phone.
+    double volume = (Settings.getValue<double>('volume') ?? 6.0) / 10.0;
     VolumeController().setVolume(volume);
   }
 

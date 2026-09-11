@@ -66,8 +66,8 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                   title: 'Bells volume',
                   settingKey: 'volume',
                   min: 0,
-                  max: 20,
-                  step: 1,
+                  max: 10,
+                  step: 0.5,
                   leading: Icon(Icons.volume_up),
                   onChange: (value) {
                     if (value != lastVolumeValue) {
