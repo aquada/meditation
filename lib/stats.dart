@@ -11,7 +11,7 @@ class StatsWidget extends StatefulWidget {
 }
 
 class _StatsWidgetState extends State<StatsWidget> {
-  late Future<(int, Duration)> statsFuture;
+  late Future<(int, int, Duration)> statsFuture;
 
   @override
   void initState() {
@@ -19,38 +19,46 @@ class _StatsWidgetState extends State<StatsWidget> {
     statsFuture = _loadStats();
   }
 
-  Future<(int, Duration)> _loadStats() async {
+  Future<(int, int, Duration)> _loadStats() async {
     final streakDays = await DatabaseHelper.instance.getStreakDays();
+    final bestStreak = await DatabaseHelper.instance.getBestStreak();
     final totalDuration = await DatabaseHelper.instance.getTotalDuration();
-    return (streakDays, totalDuration);
+    return (streakDays, bestStreak, totalDuration);
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<(int, Duration)>(
+    return FutureBuilder<(int, int, Duration)>(
       future: statsFuture,
       builder: (context, snapshot) {
         final streakDays = snapshot.data?.$1 ?? 0;
-        final totalDuration = snapshot.data?.$2 ?? Duration.zero;
+        final bestStreak = snapshot.data?.$2 ?? 0;
+        final totalDuration = snapshot.data?.$3 ?? Duration.zero;
 
         return Card(
           color: surfaceColor,
           margin: const EdgeInsets.all(12),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            child: Column(
               children: [
-                _StatColumn(
-                  icon: Icons.local_fire_department_outlined,
-                  value: '$streakDays',
-                  label: 'day streak',
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _StatColumn(
+                      icon: Icons.local_fire_department_outlined,
+                      value: '$streakDays',
+                      label: 'day streak',
+                    ),
+                    _StatColumn(
+                      icon: Icons.self_improvement_outlined,
+                      value: formatHoursMinutes(totalDuration),
+                      label: 'total meditated',
+                    ),
+                  ],
                 ),
-                _StatColumn(
-                  icon: Icons.self_improvement_outlined,
-                  value: formatHoursMinutes(totalDuration),
-                  label: 'total meditated',
-                ),
+                const SizedBox(height: 20),
+                _StreakBar(current: streakDays, best: bestStreak),
               ],
             ),
           ),
@@ -82,6 +90,48 @@ class _StatColumn extends StatelessWidget {
         Text(
           label,
           style: TextStyle(color: Colors.grey[500], fontSize: 12),
+        ),
+      ],
+    );
+  }
+}
+
+class _StreakBar extends StatelessWidget {
+  final int current;
+  final int best;
+
+  const _StreakBar({required this.current, required this.best});
+
+  @override
+  Widget build(BuildContext context) {
+    final ratio = best > 0 ? (current / best).clamp(0.0, 1.0) : 0.0;
+    final isBest = best > 0 && current >= best;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              isBest ? 'Current streak (best!)' : 'Current streak',
+              style: TextStyle(color: Colors.grey[500], fontSize: 12),
+            ),
+            Text(
+              'Best: $best',
+              style: TextStyle(color: Colors.grey[500], fontSize: 12),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: ratio,
+            minHeight: 8,
+            backgroundColor: Colors.grey[800],
+            valueColor: AlwaysStoppedAnimation<Color>(primaryColor!),
+          ),
         ),
       ],
     );
